@@ -18,9 +18,11 @@ desktop.ini
 *.~lock.*
 *.orig
 
-# 忽略所有 IDE 生成的相关设置文件
-# Visual Studio Code 生成的项目配置文件夹
-.vscode/
+# 忽略 .vscode 文件夹中的所有文件和文件夹
+.vscode/*
+# 取消对 .vscode/tasks.json 文件的忽略
+!**/.vscode/tasks.json
+
 # JetBrains IDEA (如 WebStorm) 的配置文件
 .idea/
 
