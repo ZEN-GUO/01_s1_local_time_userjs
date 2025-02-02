@@ -2,7 +2,7 @@
 // @name         Stage1 Local Time Replacer
 // @name:zh-CN   Stage1本地时间替换
 // @namespace    user-NITOUCHE
-// @version      1.1.4
+// @version      1.1.5
 // @description  Replace and overwrite China Standard Time with local time on Stage1 forums.
 // @description:zh-CN 用本地时间直接替换覆盖Stage1论坛中的中国时间。
 // @author       DS泥头车
@@ -17,13 +17,13 @@
     'use strict';
     GM_addStyle(`
         .s1-local-time {
-            font: inherit !important; /* 继承原始字体 */
+            font: inherit !important;
         }
         .s1-local-time.blue-replaced {
-            color: #000000 !important;  /* 深蓝色变黑色 */
+            color: #000000 !important;
         }
         .s1-local-time.orange-replaced {
-            color: #F26C4F !important;  /* 橙色维持 */
+            color: #F26C4F !important;
         }
     `);
     let isProcessing = false;
@@ -33,7 +33,7 @@
         if (rgb) {
             return (parseInt(rgb[1]) << 16) | (parseInt(rgb[2]) << 8) | parseInt(rgb[3]);
         }
-        return null; 
+        return null;
     }
     function convertBeijingToLocal(beijingTime) {
         try {
@@ -47,7 +47,7 @@
                 hour12: false
             }).replace(/(\d+)\/(\d+)\/(\d+)/, '$1-$2-$3');
         } catch(e) {
-            return beijingTime; 
+            return beijingTime;
         }
     }
     function processElement(el) {
@@ -62,9 +62,9 @@
                 if (!match) continue;
                 const originalColor = getElementColor(textNode.parentElement);
                 let colorClass = '';
-                if (originalColor === 0xF26C4F) { 
+                if (originalColor === 0xF26C4F) {
                     colorClass = 'orange-replaced';
-                } else if (originalColor === 0x022C80 || originalColor === 0x22c || originalColor === 0x999999) { 
+                } else if (originalColor === 0x022C80 || originalColor === 0x22c || originalColor === 0x999999) {
                     colorClass = 'blue-replaced';
                 }
                 const timeSpan = document.createElement('span');
@@ -82,7 +82,7 @@
                     timeSpan.parentNode.insertBefore(beforeTimeText, timeSpan);
                 }
                 processed = true;
-                break; 
+                break;
             }
         }
         if (processed) {
@@ -100,13 +100,12 @@
             a[href*="forum.php?mod=redirect"],
             div.quote font,
             div.blockquote font,
-            blockquote font
+            blockquote font,
+            a[href*="forum.php?mod=misc"]
         `).forEach(processElement);
         isProcessing = false;
     }
-
     processAll();
-
     new MutationObserver(mutations => {
         mutations.forEach(mut => {
             if (mut.type === 'childList') {
