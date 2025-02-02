@@ -1,143 +1,100 @@
 // ==UserScript==
-// @run-at       document-end
-// @name         Stage1本地时间增强版
-// @namespace    http://tampermonkey.net/
-// @version      0.2.0-alpha
-// @description  在帖子时间旁显示用户本地时间
+// @name         Stage1 Local Time Replacer
+// @name:zh-CN    Stage1本地时间替换版
+// @namespace    user-NITOUCHE
+// @version      1.0.0-alpha
+// @description  Replaces China Standard Time with local time on Stage1 forums.
+// @description:zh-CN 用本地时间直接替换Stage1论坛中的中国时间
 // @author       漠河泥头车
 // @match        https://bbs.saraba1st.com/2b/*
 // @icon         https://bbs.saraba1st.com/favicon.ico
 // @grant        GM_addStyle
 // @license      MIT
+// @run-at       document-end
 // ==/UserScript==
 
-/* 严格模式避免变量污染 */
 (function() {
     'use strict';
+    
     GM_addStyle(`
-        .s1-pt-time {
-            color: #666 !important;
-            margin-left: 8px;
-            font-size: 0.9em;
+        .s1-local-time {
+            color: rgb(0, 0, 0) !important;
+            font: inherit !important;
         }
     `);
 
-    function extractBeijingTime(element) {
-        const isPstatus = element.classList.contains('pstatus');
-        const timeContainer = isPstatus ? element : element.closest('[id^="authorposton"]') || element;
-        const rawText = timeContainer.textContent.trim();
-        
-        // 匹配时间部分（忽略前后文本）
-        const timeMatch = rawText.match(/(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/);
-        if (!timeMatch) return null;
-        
-        // 解构并标准化
-        const [full, year, month, day, hour, minute] = timeMatch[0].match(/(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2})/);
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute}:00+08:00`;
-    }
-
-    function convertToLocalTime(beijingTimeISO) {
+    // 防抖处理锁
+    let isProcessing = false;
+    
+    function convertBeijingToLocal(beijingTime) {
         try {
-            const date = new Date(beijingTimeISO);
-            const padZero = num => num.toString().padStart(2, '0');
-            
-            // 获取本地时区时间
-            const localYear = date.getFullYear();
-            const localMonth = date.getMonth() + 1; // 月份从0开始需要+1
-            const localDate = date.getDate();
-            const localHours = padZero(date.getHours());
-            const localMinutes = padZero(date.getMinutes());
-
-            // 格式化为 YYYY-M-D HH:mm
-            return `${localYear}-${localMonth}-${localDate} ${localHours}:${localMinutes}`;
-            
-        } catch (e) {
-            console.error('[时间转换] 失败:', e);
-            return '转换失败';
+            const date = new Date(beijingTime + '+08:00');
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(/(\d+)\/(\d+)\/(\d+)/, '$1-$2-$3');
+        } catch(e) {
+            return beijingTime; // 解析失败时返回原时间
         }
     }
 
-    function createTimeElement() {
-        const container = document.createElement('span');
-        container.className = 's1-pt-time';
-        return container;
+    function processElement(el) {
+        // 检查是否已处理或包含已处理子元素
+        if (el.dataset.timeReplaced || el.querySelector('[data-time-replaced]')) return;
+
+        const timeRegex = /(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/;
+        const match = el.textContent.match(timeRegex);
+        if (!match) return;
+
+        // 创建新文本节点代替直接操作HTML
+        const newNode = document.createTextNode(
+            el.textContent.replace(timeRegex, convertBeijingToLocal(match[0]))
+        );
+        
+        // 清除所有子节点并添加新节点
+        while (el.firstChild) el.removeChild(el.firstChild);
+        el.appendChild(newNode);
+        
+        // 直接标记原始元素而非新建的节点
+        el.dataset.timeReplaced = "true";
     }
 
-    function processAllTimeElements() {
-        const timeElements = document.querySelectorAll(`
-            em[id^="authorposton"], 
-            em[id^="authorposton"] span, 
-            a[href*="forum.php?mod=redirect"], 
+    function processAll() {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        document.querySelectorAll(`
+            em[id^="authorposton"],
+            i.pstatus,
+            cite,
             td.by em span,
-            cite:not(:has(img)),
-            i.pstatus
-        `);
+            a[href*="forum.php?mod=redirect"]
+        `).forEach(processElement);
 
-        timeElements.forEach(element => {
-            const parent = element.parentElement;
-            if (parent?.querySelector('.s1-pt-time')) return;
-            if (element.dataset.processed || !element.textContent?.trim()) return;
-
-            try {
-                const beijingTimeISO = extractBeijingTime(element);
-                if (!beijingTimeISO) return;
-                
-                const localTime = convertToLocalTime(beijingTimeISO);
-                const timeBadge = createTimeElement();
-                timeBadge.textContent = `本地: ${localTime}`;
-                
-                element.after(timeBadge);
-                element.dataset.processed = "true";
-                timeBadge.dataset.processed = "true";
-            } catch (error) {
-                console.error('[元素处理] 失败:', error);
-            }
-        });
-
-        // 处理特殊cite标签
-        document.querySelectorAll('cite').forEach(citeElement => {
-            const textNode = Array.from(citeElement.childNodes)
-                .find(n => n.nodeType === Node.TEXT_NODE);
-            
-            if (textNode?.textContent?.trim() && !citeElement.dataset.processed) {
-                const timeMatch = textNode.textContent.match(/(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/);
-                if (timeMatch) {
-                    const timeBadge = createTimeElement();
-                    timeBadge.textContent = `本地: ${convertToLocalTime(timeMatch[0])}`;
-                    textNode.after(timeBadge);
-                    citeElement.dataset.processed = "true";
-                }
-            }
-        });
+        isProcessing = false;
     }
 
-    function setupMutationObserver() {
-        let processing = false;
-        const observer = new MutationObserver(() => {
-            if (!processing) {
-                processing = true;
-                requestAnimationFrame(() => {
-                    processAllTimeElements();
-                    processing = false;
+    // 初始化
+    processAll();
+
+    // 观察器配置优化
+    new MutationObserver(mutations => {
+        mutations.forEach(mut => {
+            if (mut.type === 'childList') {
+                mut.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        processAll();
+                    }
                 });
             }
         });
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributeFilter: ['data-processed']
-        });
-    }
-
-    function main() {
-        console.log('[S1时间转换] 脚本启动');
-        processAllTimeElements();
-        setupMutationObserver();
-    }
-
-    if (document.readyState !== 'complete') {
-        window.addEventListener('load', main);
-    } else {
-        main();
-    }
+    }).observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false
+    });
 })();
