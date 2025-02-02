@@ -2,7 +2,7 @@
 // @run-at       document-end
 // @name         Stage1本地时间增强版
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.1.0-alpha
 // @description  在帖子时间旁显示太平洋时间
 // @author       漠河泥头车
 // @match        https://bbs.saraba1st.com/2b/*
