@@ -2,7 +2,7 @@
 // @name         Stage1 Local Time Replacer
 // @name:zh-CN    Stage1本地时间替换版
 // @namespace    user-NITOUCHE
-// @version      1.1.1-alpha
+// @version      1.1.2-alpha
 // @description  Replaces China Standard Time with local time on Stage1 forums.
 // @description:zh-CN 用本地时间直接替换Stage1论坛中的中国时间
 // @author       漠河泥头车
@@ -52,40 +52,50 @@
         }
     }
     function processElement(el) {
-        // 检查是否已处理或包含已处理子元素
         if (el.dataset.timeReplaced || el.querySelector('[data-time-replaced]')) return;
+
+        let processed = false;
         const timeRegex = /(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/;
-        const match = el.textContent.match(timeRegex);
-        if (!match) return;
 
-        const originalColor = getElementColor(el);
-        let colorClass = '';
-        if (originalColor === 0xF26C4F) { // 橙色 #F26C4F
-            colorClass = 'orange-replaced';
-        } else if (originalColor === 0x022C80 || originalColor === 0x22c) { // 基准深蓝 #022C80, 简写 #22c
-            colorClass = 'blue-replaced';
+        const treeWalker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        let textNode;
+
+        while (textNode = treeWalker.nextNode()) {
+            if (textNode.textContent.trim() && timeRegex.test(textNode.textContent)) {
+                const match = textNode.textContent.match(timeRegex);
+                if (!match) continue;
+
+                const originalColor = getElementColor(textNode.parentElement);
+                let colorClass = '';
+                if (originalColor === 0xF26C4F) { // 橙色 #F26C4F
+                    colorClass = 'orange-replaced';
+                } else if (originalColor === 0x022C80 || originalColor === 0x22c) { // 基准深蓝 #022C80, 简写 #22c
+                    colorClass = 'blue-replaced';
+                }
+
+                const timeSpan = document.createElement('span');
+                timeSpan.className = `s1-local-time ${colorClass}`.trim();
+                timeSpan.textContent = convertBeijingToLocal(match[0]);
+                timeSpan.dataset.timeReplaced = "true";
+
+                const beforeTimeText = document.createTextNode(textNode.textContent.substring(0, match.index));
+                const afterTimeText = document.createTextNode(textNode.textContent.substring(match.index + match[0].length));
+
+                const parentNode = textNode.parentNode;
+                parentNode.replaceChild(timeSpan, textNode);
+                if (afterTimeText.textContent) {
+                    timeSpan.parentNode.insertBefore(afterTimeText, timeSpan.nextSibling);
+                }
+                if (beforeTimeText.textContent) {
+                    timeSpan.parentNode.insertBefore(beforeTimeText, timeSpan);
+                }
+                processed = true;
+                break; // Assuming only one time per element needs to be processed. Remove if multiple times in one element are possible.
+            }
         }
-
-        // 创建新 span 元素
-        const timeSpan = document.createElement('span');
-        timeSpan.className = `s1-local-time ${colorClass}`.trim();
-        timeSpan.textContent = convertBeijingToLocal(match[0]);
-        timeSpan.dataset.timeReplaced = "true"; // 标记 span 为已处理
-
-        // 创建文本节点用于时间前后的文本
-        const beforeTimeText = document.createTextNode(el.textContent.substring(0, match.index));
-        const afterTimeText = document.createTextNode(el.textContent.substring(match.index + match[0].length));
-
-        // 清除所有子节点并添加新节点
-        while (el.firstChild) el.removeChild(el.firstChild);
-
-        // 添加 时间前文本, span, 时间后文本
-        if (beforeTimeText.textContent) el.appendChild(beforeTimeText);
-        el.appendChild(timeSpan);
-        if (afterTimeText.textContent) el.appendChild(afterTimeText);
-
-        // 标记原始元素为已处理 (可以考虑移动到更外层，如果想对元素只处理一次)
-        el.dataset.timeReplaced = "true";
+        if (processed) {
+            el.dataset.timeReplaced = "true";
+        }
     }
     function processAll() {
         if (isProcessing) return;
