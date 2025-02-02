@@ -2,7 +2,7 @@
 // @run-at       document-end
 // @name         Stage1本地时间增强版
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0-alpha
+// @version      0.1.1-alpha
 // @description  在帖子时间旁显示太平洋时间
 // @author       漠河泥头车
 // @match        https://bbs.saraba1st.com/2b/*
@@ -24,7 +24,8 @@
     `);
 
     function extractBeijingTime(element) {
-        const timeContainer = element.closest('[id^="authorposton"]') || element;
+        const isPstatus = element.classList.contains('pstatus');
+        const timeContainer = isPstatus ? element : element.closest('[id^="authorposton"]') || element;
         const rawText = timeContainer.textContent.trim();
         
         // 匹配时间部分（忽略前后文本）
@@ -77,7 +78,8 @@
             em[id^="authorposton"] span,     /* 匹配嵌套span的情况 */
             a[href*="forum.php?mod=redirect"], 
             td.by em span,
-            cite:not(:has(img))
+            cite:not(:has(img)),
+            i.pstatus
         `);
 
         timeElements.forEach(element => {
@@ -91,13 +93,10 @@
             try {
                 const beijingTimeISO = extractBeijingTime(element);
                 if (!beijingTimeISO) return;
-
                 const pacificTime = convertToPacificTime(beijingTimeISO);
                 const timeBadge = createPacificTimeElement();
                 timeBadge.textContent = `PT: ${pacificTime}`;
-
                 // 智能插入位置判断（新增）
-                const insertPosition = element.nextSibling || 'afterend';
                 element.after(timeBadge);
                 
                 element.dataset.processed = "true";
