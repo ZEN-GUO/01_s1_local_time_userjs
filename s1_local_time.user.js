@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Stage1 Local Time Replacer
-// @name:zh-CN    Stage1本地时间替换版
+// @name:zh-CN   Stage1本地时间替换
 // @namespace    user-NITOUCHE
-// @version      1.1.3
-// @description  Replaces China Standard Time with local time on Stage1 forums.
-// @description:zh-CN 用本地时间直接替换Stage1论坛中的中国时间
+// @version      1.1.4
+// @description  Replace and overwrite China Standard Time with local time on Stage1 forums.
+// @description:zh-CN 用本地时间直接替换覆盖Stage1论坛中的中国时间。
 // @author       DS泥头车
-// @match        https://bbs.saraba1st.com/2b/*
+// @match        https://*.saraba1st.com/2b/*
 // @icon         https://bbs.saraba1st.com/favicon.ico
 // @grant        GM_addStyle
 // @license      MIT
@@ -26,7 +26,6 @@
             color: #F26C4F !important;  /* 橙色维持 */
         }
     `);
-    // 防抖处理锁
     let isProcessing = false;
     function getElementColor(el) {
         const color = window.getComputedStyle(el).color;
@@ -34,7 +33,7 @@
         if (rgb) {
             return (parseInt(rgb[1]) << 16) | (parseInt(rgb[2]) << 8) | parseInt(rgb[3]);
         }
-        return null; // 忽略透明或其他格式
+        return null; 
     }
     function convertBeijingToLocal(beijingTime) {
         try {
@@ -48,7 +47,7 @@
                 hour12: false
             }).replace(/(\d+)\/(\d+)\/(\d+)/, '$1-$2-$3');
         } catch(e) {
-            return beijingTime; // 解析失败时返回原时间
+            return beijingTime; 
         }
     }
     function processElement(el) {
@@ -63,9 +62,9 @@
                 if (!match) continue;
                 const originalColor = getElementColor(textNode.parentElement);
                 let colorClass = '';
-                if (originalColor === 0xF26C4F) { // 橙色 #F26C4F
+                if (originalColor === 0xF26C4F) { 
                     colorClass = 'orange-replaced';
-                } else if (originalColor === 0x022C80 || originalColor === 0x22c || originalColor === 0x999999) { // 基准深蓝 #022C80, 简写 #22c, 灰色 #999999
+                } else if (originalColor === 0x022C80 || originalColor === 0x22c || originalColor === 0x999999) { 
                     colorClass = 'blue-replaced';
                 }
                 const timeSpan = document.createElement('span');
@@ -83,7 +82,7 @@
                     timeSpan.parentNode.insertBefore(beforeTimeText, timeSpan);
                 }
                 processed = true;
-                break; // Assuming only one time per element needs to be processed. Remove if multiple times in one element are possible.
+                break; 
             }
         }
         if (processed) {
@@ -105,9 +104,9 @@
         `).forEach(processElement);
         isProcessing = false;
     }
-    // 初始化
+
     processAll();
-    // 观察器配置优化
+
     new MutationObserver(mutations => {
         mutations.forEach(mut => {
             if (mut.type === 'childList') {
