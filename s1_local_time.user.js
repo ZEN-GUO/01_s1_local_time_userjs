@@ -2,10 +2,10 @@
 // @name         Stage1 Local Time Replacer
 // @name:zh-CN    Stage1本地时间替换版
 // @namespace    user-NITOUCHE
-// @version      1.1.2-alpha
+// @version      1.1.3
 // @description  Replaces China Standard Time with local time on Stage1 forums.
 // @description:zh-CN 用本地时间直接替换Stage1论坛中的中国时间
-// @author       漠河泥头车
+// @author       DS泥头车
 // @match        https://bbs.saraba1st.com/2b/*
 // @icon         https://bbs.saraba1st.com/favicon.ico
 // @grant        GM_addStyle
@@ -53,34 +53,27 @@
     }
     function processElement(el) {
         if (el.dataset.timeReplaced || el.querySelector('[data-time-replaced]')) return;
-
         let processed = false;
         const timeRegex = /(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/;
-
         const treeWalker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
         let textNode;
-
         while (textNode = treeWalker.nextNode()) {
             if (textNode.textContent.trim() && timeRegex.test(textNode.textContent)) {
                 const match = textNode.textContent.match(timeRegex);
                 if (!match) continue;
-
                 const originalColor = getElementColor(textNode.parentElement);
                 let colorClass = '';
                 if (originalColor === 0xF26C4F) { // 橙色 #F26C4F
                     colorClass = 'orange-replaced';
-                } else if (originalColor === 0x022C80 || originalColor === 0x22c) { // 基准深蓝 #022C80, 简写 #22c
+                } else if (originalColor === 0x022C80 || originalColor === 0x22c || originalColor === 0x999999) { // 基准深蓝 #022C80, 简写 #22c, 灰色 #999999
                     colorClass = 'blue-replaced';
                 }
-
                 const timeSpan = document.createElement('span');
                 timeSpan.className = `s1-local-time ${colorClass}`.trim();
                 timeSpan.textContent = convertBeijingToLocal(match[0]);
                 timeSpan.dataset.timeReplaced = "true";
-
                 const beforeTimeText = document.createTextNode(textNode.textContent.substring(0, match.index));
                 const afterTimeText = document.createTextNode(textNode.textContent.substring(match.index + match[0].length));
-
                 const parentNode = textNode.parentNode;
                 parentNode.replaceChild(timeSpan, textNode);
                 if (afterTimeText.textContent) {
