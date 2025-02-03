@@ -2,7 +2,7 @@
 // @name         Stage1 Local Time Replacer
 // @name:zh-CN   Stage1本地时间替换
 // @namespace    user-NITOUCHE
-// @version      1.1.5
+// @version      1.1.6
 // @description  Replace and overwrite China Standard Time with local time on Stage1 forums.
 // @description:zh-CN 用本地时间直接替换覆盖Stage1论坛中的中国时间。
 // @author       DS泥头车
@@ -53,7 +53,7 @@
     function processElement(el) {
         if (el.dataset.timeReplaced || el.querySelector('[data-time-replaced]')) return;
         let processed = false;
-        const timeRegex = /(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{2})/;
+        const timeRegex = /(\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2})/;
         const treeWalker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
         let textNode;
         while (textNode = treeWalker.nextNode()) {
