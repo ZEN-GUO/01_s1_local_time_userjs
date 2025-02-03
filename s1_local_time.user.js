@@ -2,9 +2,9 @@
 // @name         Stage1 Local Time Replacer
 // @name:zh-CN   Stage1本地时间替换
 // @namespace    user-NITOUCHE
-// @version      1.2.1
+// @version      1.3.0
 // @description  Replace and overwrite China Standard Time with local time on Stage1 forums.
-// @description:zh-CN 用本地时间直接替换覆盖Stage1论坛中的中国时间。
+// @description:zh-CN 用本地时间替换覆盖Stage1论坛中的中国时间。
 // @author       DS泥头车
 // @match        https://*.saraba1st.com/2b/*
 // @icon         https://bbs.saraba1st.com/favicon.ico
@@ -104,7 +104,8 @@
             a[href*="forum.php?mod=misc"],
             ul#pbbs li,
             table td,
-            span.xg1.xw0
+            span.xg1.xw0,
+            p span
         `).forEach(processElement);
         isProcessing = false;
     }
