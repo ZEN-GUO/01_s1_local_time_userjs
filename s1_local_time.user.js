@@ -6,8 +6,8 @@
 // @description  Replace and overwrite China Standard Time with local time on Stage1 forums.
 // @description:zh-CN 用本地时间替换覆盖Stage1论坛中的中国时间。
 // @author       DS泥头车
-// @match        https://*.saraba1st.com/2b/*
-// @icon         https://bbs.saraba1st.com/favicon.ico
+// @match        https://*.stage1st.com/2b/*
+// @icon         https://bbs.stage1st.com/favicon.ico
 // @grant        GM_addStyle
 // @license      MIT
 // @run-at       document-end
